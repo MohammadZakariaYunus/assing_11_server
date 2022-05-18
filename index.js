@@ -18,7 +18,9 @@ async function run() {
         await client.connect();
         const itemCollection = client.db('wholesaleDealers').collection('items');
         const myItemsCollection = client.db('wholesaleDealers').collection('myItems');
-        // AUTH 
+
+
+        // AUTH (JWT)
 
         app.post('/login', async (req, res) => {
             const user = req.body;
