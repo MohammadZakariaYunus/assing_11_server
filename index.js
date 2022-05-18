@@ -1,5 +1,6 @@
 const express = require('express');
 const cors = require('cors');
+const jwt = require('jsonwebtoken');
 require('dotenv').config();
 const { MongoClient, ServerApiVersion, ObjectId } = require('mongodb');
 const port = process.env.PORT || 5000
@@ -16,6 +17,16 @@ async function run() {
     try {
         await client.connect();
         const itemCollection = client.db('wholesaleDealers').collection('items');
+        const myItemsCollection = client.db('wholesaleDealers').collection('myItems');
+        // AUTH 
+
+        app.post('/login', async (req, res) => {
+            const user = req.body;
+            const accessToken = jwt.sign(user, process.env.ACCESS_TOKEN_SECRET, {
+                expiresIn: '1d'
+            });
+            res.send({ accessToken });
+        })
 
         app.get('/product', async (req, res) => {
             const query = {};
@@ -29,6 +40,12 @@ async function run() {
             const product = await itemCollection.findOne(query);
             res.send(product);
         })
+        app.get('/product', async (req, res) => {
+            const query = {};
+            const cursor = itemCollection.find(query);
+            const items = await cursor.toArray();
+            res.send(items);
+        })
         // POST
         // app.get('/product/:id', async (req, res) =>{})
 
@@ -38,6 +55,36 @@ async function run() {
             res.send(result);
         })
 
+        app.put('/product/:id', async (req, res) => {
+            const id = req.params.id;
+            const updatedProduct = req.body;
+            const filter = { _id: ObjectId(id) };
+            const options = { upsert: true };
+            const updatedDoc = {
+                $set: {
+                    quantity: updatedProduct.quantity
+                }
+            };
+            const result = await itemCollection.updateOne(filter, updatedDoc, options);
+            res.send(result);
+        })
+
+        // myItems
+        app.post('/myItems', async (req, res) => {
+            const myItem = req.body;
+            const result = await myItemsCollection.insertOne(myItem);
+            res.send(result);
+        })
+
+        app.get('/myItems', async (req, res) => {
+            const email = req.query.email;
+            const query = { email: email };
+            const cursor = myItemsCollection.find(query);
+            const items = await cursor.toArray();
+            res.send(items);
+        })
+
+
         // DELETE
         app.delete('/product/:id', async (req, res) => {
             const id = req.params.id;
@@ -45,6 +92,7 @@ async function run() {
             const result = await itemCollection.deleteOne(query);
             res.send(result);
         })
+        // const email = req.query.email
     }
     finally {
 
@@ -52,8 +100,6 @@ async function run() {
 }
 
 run().catch(console.dir)
-
-
 
 app.get('/', (req, res) => {
     res.send("Running Server");
