@@ -10,6 +10,13 @@ const app = express();
 app.use(cors());
 app.use(express.json());
 
+// function verifyJWT(res, req, next) {
+//     const authHeader = req.headers.authorization;
+//     console.log(authHeader);
+//     next();
+// }
+
+
 
 const uri = `mongodb+srv://${process.env.DB_USER}:${process.env.DB_PASS}@cluster0.3zcpk.mongodb.net/myFirstDatabase?retryWrites=true&w=majority`;
 const client = new MongoClient(uri, { useNewUrlParser: true, useUnifiedTopology: true, serverApi: ServerApiVersion.v1 });
@@ -59,19 +66,7 @@ async function run() {
 
         // update
 
-        app.put('/product/:id', async (req, res) => {
-            const id = req.params.id;
-            const updatedProduct = req.body;
-            const filter = { _id: ObjectId(id) };
-            const options = { upsert: true };
-            const updatedDoc = {
-                $set: {
-                    quantity: updatedProduct.quantity
-                }
-            };
-            const result = await itemCollection.updateOne(filter, updatedDoc, options);
-            res.send(result);
-        })
+
 
         // myItems
         app.post('/myItems', async (req, res) => {
