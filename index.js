@@ -1,20 +1,34 @@
 const express = require('express');
 const cors = require('cors');
 const jwt = require('jsonwebtoken');
+
 require('dotenv').config();
 const { MongoClient, ServerApiVersion, ObjectId } = require('mongodb');
 const port = process.env.PORT || 5000
 const app = express();
 
+
 // middelware
 app.use(cors());
 app.use(express.json());
 
-// function verifyJWT(res, req, next) {
-//     const authHeader = req.headers.authorization;
-//     console.log(authHeader);
-//     next();
-// }
+
+
+function verifyJWT(req, res, next) {
+    const authHeader = req.headers.authorization;
+    if (!authHeader) {
+        return res.status(401).send({ message: 'UnAuthorized access' });
+    }
+    const token = authHeader.split(' ')[1];
+    jwt.verify(token, process.env.ACCESS_TOKEN_SECRET, function (err, decoded) {
+        if (err) {
+            return res.status(403).send({ message: 'Forbidden access' })
+        }
+        req.decoded = decoded;
+        next();
+    });
+}
+
 
 
 
@@ -66,7 +80,17 @@ async function run() {
 
         // update
 
-
+        app.put('/product/:id', async (req, res) => {
+            const id = req.params.id;
+            const updatedProduct = req.body;
+            const filter = { _id: ObjectId(id) };
+            const options = { upsert: true };
+            const updatedDoc = {
+                $set: updatedProduct
+            };
+            const result = await itemCollection.updateOne(filter, updatedDoc, options);
+            res.send(result);
+        })
 
         // myItems
         app.post('/myItems', async (req, res) => {
